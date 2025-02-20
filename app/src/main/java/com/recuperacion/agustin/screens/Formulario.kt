@@ -1,6 +1,5 @@
 package com.recuperacion.agustin.screens
 
-import ComponenteDieta
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 import com.recuperacion.agustin.modelo.AlimentosMVVM
+import com.recuperacion.agustin.modelo.ComponenteDieta
 
 
 import kotlinx.coroutines.launch
@@ -36,43 +36,38 @@ import kotlinx.coroutines.launch
 fun Formulario(viewModel: AlimentosMVVM) {
     var alimento by rememberSaveable { mutableStateOf(ComponenteDieta()) }
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() } // Para mostrar mensajes
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-
 
     Column(modifier = Modifier.padding(16.dp)) {
         TextField(
             value = alimento.nombre,
-            onValueChange = { newText ->
-                alimento = alimento.copy(nombre = newText)
-            },
+            onValueChange = { newText -> alimento = alimento.copy(nombre = newText) },
             label = { Text("Nombre del alimento") },
             modifier = Modifier.fillMaxWidth()
         )
 
+        fun safeToDouble(value: String): Double {
+            return value.toDoubleOrNull() ?: 0.0
+        }
+
         TextField(
             value = alimento.grPro_ini.toString(),
-            onValueChange = { newText ->
-                alimento = alimento.copy(grPro_ini = newText.toDoubleOrNull() ?: 0.0)
-            },
+            onValueChange = { alimento = alimento.copy(grPro_ini = safeToDouble(it)) },
             label = { Text("Proteínas (gr)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         TextField(
             value = alimento.grHC_ini.toString(),
-            onValueChange = { newText ->
-                alimento = alimento.copy(grHC_ini = newText.toDoubleOrNull() ?: 0.0)
-            },
+            onValueChange = { alimento = alimento.copy(grHC_ini = safeToDouble(it)) },
             label = { Text("Carbohidratos (gr)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         TextField(
             value = alimento.grLip_ini.toString(),
-            onValueChange = { newText ->
-                alimento = alimento.copy(grLip_ini = newText.toDoubleOrNull() ?: 0.0)
-            },
+            onValueChange = { alimento = alimento.copy(grLip_ini = safeToDouble(it)) },
             label = { Text("Lípidos (gr)") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -97,7 +92,6 @@ fun Formulario(viewModel: AlimentosMVVM) {
             Text("Guardar")
         }
 
-        // Snackbar para feedback visual
         SnackbarHost(hostState = snackbarHostState)
     }
 }

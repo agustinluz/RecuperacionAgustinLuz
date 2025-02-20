@@ -1,14 +1,15 @@
 package com.recuperacion.agustin.room
 
-import ComponenteDieta
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.recuperacion.agustin.modelo.Ingrediente
+import com.recuperacion.agustin.modelo.ComponenteDieta
 
-
-@Database(entities = [ComponenteDieta::class], version = 1, exportSchema = false)
+@Database(entities = [ComponenteDieta::class, Ingrediente::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun componenteDietaDao(): ComponenteDietaDao
 
     companion object {
@@ -21,11 +22,12 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
         }
     }
 }
-

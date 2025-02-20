@@ -1,6 +1,5 @@
 package com.recuperacion.agustin.modelo
 
-import ComponenteDieta
 import com.recuperacion.agustin.room.ComponenteDietaDao
 import kotlinx.coroutines.flow.Flow
 

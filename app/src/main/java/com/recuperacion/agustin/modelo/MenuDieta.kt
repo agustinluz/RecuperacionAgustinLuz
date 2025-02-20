@@ -1,6 +1,6 @@
 package com.recuperacion.agustin.modelo
 
-import ComponenteDieta
+import com.recuperacion.agustin.modelo.ComponenteDieta
 
 data class MenuDieta(
     var nombre: String = "",

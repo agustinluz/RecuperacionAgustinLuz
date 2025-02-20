@@ -3,6 +3,7 @@ package com.recuperacion.agustin.componentes
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,7 +27,7 @@ fun NavigationButton(
     ) {
         Button(onClick = onNavigateToFormulario) {
             Icon(
-                imageVector = Icons.Filled.Star,
+                imageVector = Icons.Default.Menu,
                 contentDescription = "Formulario",
                 tint = Color.White
             )
@@ -35,7 +36,7 @@ fun NavigationButton(
         }
         Button(onClick = onNavigateToListado) {
             Icon(
-                imageVector = Icons.Filled.List,
+                imageVector = Icons.Default.List,
                 contentDescription = "Listado",
                 tint = Color.White
             )
