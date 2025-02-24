@@ -1,5 +1,6 @@
 package com.recuperacion.agustin.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,37 +30,48 @@ fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Text(
-            text = "Filtrar por tipo:",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        FlowRow(
+        // Sección de filtros
+        ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            FiltroBotón(
-                texto = "Todos",
-                seleccionado = tipoSeleccionado == null,
-                onClick = { tipoSeleccionado = null }
-            )
-            TipoComponente.values().forEach { tipo ->
-                FiltroBotón(
-                    texto = tipo.name,
-                    seleccionado = tipoSeleccionado == tipo,
-                    onClick = { tipoSeleccionado = tipo }
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Filtrar por tipo",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = tipoSeleccionado == null,
+                        onClick = { tipoSeleccionado = null },
+                        label = { Text("Todos") }
+                    )
+                    TipoComponente.values().forEach { tipo ->
+                        FilterChip(
+                            selected = tipoSeleccionado == tipo,
+                            onClick = { tipoSeleccionado = tipo },
+                            label = { Text(tipo.name) }
+                        )
+                    }
+                }
             }
         }
 
+        // Lista de componentes
         LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val alimentosFiltrados = if (tipoSeleccionado == null) {
@@ -69,17 +81,16 @@ fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta)
             }
 
             items(alimentosFiltrados) { componente ->
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { 
                             componenteExpandido = if (componenteExpandido == componente) null else componente 
-                        }
+                        },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                        modifier = Modifier.padding(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -92,51 +103,32 @@ fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta)
                                     style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
-                                    text = "Tipo: ${componente.tipo}",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    text = componente.tipo.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                             }
                             Row {
                                 IconButton(onClick = { onNavigateToEdit(componente) }) {
-                                    Icon(Icons.Default.Edit, "Editar")
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = "Editar",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                                 IconButton(onClick = { viewModel.eliminarAlimento(componente) }) {
-                                    Icon(Icons.Default.Delete, "Eliminar")
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Eliminar",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             }
                         }
 
-                        // Mostrar detalles cuando está expandido
                         if (componenteExpandido == componente) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Divider()
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            when (componente.tipo) {
-                                TipoComponente.MENU, TipoComponente.DIETA -> {
-                                    val componenteConIngredientes by viewModel
-                                        .obtenerComponenteConIngredientes(componente.id)
-                                        .collectAsState(initial = null)
-                                    
-                                    Text(
-                                        text = "Componentes:",
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
-                                    componenteConIngredientes?.ingredientes?.forEach { ingrediente ->
-                                        Text(
-                                            text = "• ${ingrediente.nombre} (${ingrediente.cantidad}g)",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                }
-                                else -> {
-                                    Text("Información nutricional:")
-                                    Text("• Carbohidratos: ${componente.grHC_ini}g")
-                                    Text("• Lípidos: ${componente.grLip_ini}g")
-                                    Text("• Proteínas: ${componente.grPro_ini}g")
-                                    Text("• Calorías totales: ${componente.Kcal_ini} kcal")
-                                }
-                            }
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            DetallesComponente(componente, viewModel)
                         }
                     }
                 }
@@ -146,19 +138,82 @@ fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta)
 }
 
 @Composable
-private fun FiltroBotón(
-    texto: String,
-    seleccionado: Boolean,
-    onClick: () -> Unit
+private fun DetallesComponente(
+    componente: ComponenteDieta,
+    viewModel: AlimentosMVVM
 ) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (seleccionado) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.secondary
-        ),
-        modifier = Modifier.padding(horizontal = 4.dp)
-    ) {
-        Text(texto)
+    when (componente.tipo) {
+        TipoComponente.MENU, TipoComponente.DIETA -> {
+            val componenteConIngredientes by viewModel
+                .obtenerComponenteConIngredientes(componente.id)
+                .collectAsState(initial = null)
+
+            Text(
+                text = "Componentes",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            componenteConIngredientes?.ingredientes?.forEach { ingrediente ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "• ${ingrediente.nombre}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "${ingrediente.cantidad}g",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+        else -> {
+            InfoNutricional(componente)
+        }
+    }
+}
+
+@Composable
+private fun InfoNutricional(componente: ComponenteDieta) {
+    Column {
+        Text(
+            text = "Información nutricional",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            InfoNutricionalItem("Carbohidratos", componente.grHC_ini)
+            InfoNutricionalItem("Lípidos", componente.grLip_ini)
+            InfoNutricionalItem("Proteínas", componente.grPro_ini)
+        }
+        Text(
+            text = "Calorías totales: ${componente.Kcal_ini} kcal",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(top = 8.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun InfoNutricionalItem(label: String, valor: Double) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = "${valor}g",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
     }
 }

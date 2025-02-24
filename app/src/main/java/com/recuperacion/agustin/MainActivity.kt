@@ -24,16 +24,30 @@ import com.recuperacion.agustin.modelo.AlimentosRepository
 import com.recuperacion.agustin.screens.Ruta
 import com.recuperacion.agustin.modelo.IngredienteRepository
 import com.recuperacion.agustin.screens.ListadoDetalle
+import com.recuperacion.agustin.ui.theme.DietasTheme
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Text
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarDefaults
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MainScreen()
+            DietasTheme {
+                MainScreen()
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -54,9 +68,33 @@ fun MainScreen() {
 
     Scaffold(
         topBar = {
-            MiTopAppBar(
-                onNavigateToFormulario = { navController.navigate(Ruta.Formulario.ruta) },
-                onNavigateToListado = { navController.navigate(Ruta.ListadoDetalle.ruta) }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Gestión de Dietas",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                actions = {
+                    IconButton(onClick = { navController.navigate(Ruta.Formulario.ruta) }) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Nuevo",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    IconButton(onClick = { navController.navigate(Ruta.ListadoDetalle.ruta) }) {
+                        Icon(
+                            Icons.Default.List,
+                            contentDescription = "Listado",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->
