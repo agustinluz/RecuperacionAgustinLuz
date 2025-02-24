@@ -6,11 +6,13 @@ import androidx.lifecycle.ViewModelProvider
 
 class AlimentosMVVMFactory(
     private val application: Application,
-    private val repository: AlimentosRepository
+    private val alimentosRepository: AlimentosRepository,
+    private val ingredienteRepository: IngredienteRepository
 ) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AlimentosMVVM::class.java)) {
-            return AlimentosMVVM(application, repository) as T
+            return AlimentosMVVM(application, alimentosRepository, ingredienteRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

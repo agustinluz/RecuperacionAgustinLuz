@@ -1,7 +1,5 @@
 package com.recuperacion.agustin.componentes
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
@@ -13,7 +11,7 @@ import androidx.compose.runtime.Composable
 @Composable
 fun MiTopAppBar(onNavigateToFormulario: () -> Unit, onNavigateToListado: () -> Unit) {
     TopAppBar(
-        title = { Text("Mi Aplicación") },
+        title = { Text("GESTION DIETAS AGUSTIN") },
         actions = {
             IconButton(onClick = onNavigateToFormulario) {
                 Icon(Icons.Default.Menu, contentDescription = "Formulario")

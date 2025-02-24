@@ -9,11 +9,18 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @Entity(tableName = "componentes_dieta")
 data class ComponenteDieta(
-    @PrimaryKey(autoGenerate = true) var id: Int = 0,
-    var nombre: String = "",
-    var tipo: TipoComponente = TipoComponente.SIMPLE,
-    var grHC_ini: Double = 0.0,
-    var grLip_ini: Double = 0.0,
-    var grPro_ini: Double = 0.0,
-    var Kcal_ini: Double = 0.0
-) : Parcelable
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val nombre: String,
+    val tipo: TipoComponente,
+    val grHC_ini: Double,
+    val grLip_ini: Double,
+    val grPro_ini: Double,
+    val Kcal_ini: Double
+) : Parcelable {
+
+    fun calcularKcal(): Double {
+        return (grHC_ini * 4) + (grLip_ini * 9) + (grPro_ini * 4)
+    }
+
+}
