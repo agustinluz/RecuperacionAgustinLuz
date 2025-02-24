@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 class AlimentosMVVM(
     application: Application,
     private val alimentosRepository: AlimentosRepository,
-    ingredienteRepository: IngredienteRepository
+    private val ingredienteRepository: IngredienteRepository
 ) : AndroidViewModel(application) {
 
     private val _alimentos = MutableStateFlow<List<ComponenteDieta>>(emptyList())
@@ -41,7 +41,7 @@ class AlimentosMVVM(
         }
     }
 
-    fun obtenerComponenteConIngredientes(componenteId: Int): Flow<ComponenteConIngredientes> {
+    fun obtenerComponenteConIngredientes(componenteId: Int): Flow<ComponenteConIngredientes?> {
         return alimentosRepository.obtenerComponenteConIngredientes(componenteId)
     }
 
@@ -69,7 +69,52 @@ class AlimentosMVVM(
         }
     }
 
+    fun eliminarIngrediente(ingrediente: Ingrediente) {
+        viewModelScope.launch {
+            ingredienteRepository.eliminarIngrediente(ingrediente)
+        }
+    }
+
     fun obtenerComponentePorId(id: Int): ComponenteDieta? {
         return alimentos.value?.find { it.id == id }
+    }
+
+    fun agregarAlimentoConIngredientes(
+        alimento: ComponenteDieta,
+        componentesSeleccionados: List<ComponenteDieta>
+    ) {
+        viewModelScope.launch {
+            val id = alimentosRepository.insertarYObtenerIdAlimento(alimento)
+            componentesSeleccionados.forEach { componente ->
+                ingredienteRepository.insertar(
+                    Ingrediente(
+                        nombre = componente.nombre,
+                        componenteDietaId = id,
+                        cantidad = 100.0
+                    )
+                )
+            }
+        }
+    }
+
+    fun actualizarAlimentoConIngredientes(
+        alimento: ComponenteDieta,
+        componentesSeleccionados: List<ComponenteDieta>
+    ) {
+        viewModelScope.launch {
+            alimentosRepository.actualizarAlimento(alimento)
+            // Primero eliminamos los ingredientes existentes
+            ingredienteRepository.eliminarIngredientesPorComponente(alimento.id)
+            // Luego añadimos los nuevos
+            componentesSeleccionados.forEach { componente ->
+                ingredienteRepository.insertar(
+                    Ingrediente(
+                        nombre = componente.nombre,
+                        componenteDietaId = alimento.id,
+                        cantidad = 100.0
+                    )
+                )
+            }
+        }
     }
 }

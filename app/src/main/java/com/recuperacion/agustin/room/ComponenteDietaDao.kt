@@ -23,4 +23,7 @@ interface ComponenteDietaDao {
 
     @Delete
     suspend fun eliminar(alimento: ComponenteDieta)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarYObtenerIdAlimento(alimento: ComponenteDieta): Long
 }

@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -22,6 +25,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -48,7 +53,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
-
+import androidx.compose.material3.Divider
 import com.recuperacion.agustin.modelo.AlimentosMVVM
 import com.recuperacion.agustin.modelo.ComponenteDieta
 import com.recuperacion.agustin.modelo.Ingrediente
@@ -79,15 +84,33 @@ fun Formulario(
     
     var mostrarDialogoComponentes by remember { mutableStateOf(false) }
     var mostrarMensajeGuardado by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     
-    val componentesSeleccionados = remember { 
-        mutableStateListOf<ComponenteDieta>().apply {
-            if (componenteAEditar?.tipo == TipoComponente.MENU || 
-                componenteAEditar?.tipo == TipoComponente.DIETA) {
-                // Cargar componentes existentes si es una edición
-                // Implementar lógica para cargar los componentes existentes
-            }
+    val componentesSeleccionados = remember { mutableStateListOf<ComponenteDieta>() }
+
+    // Cargar componentes existentes si es una edición
+    val componenteConIngredientes by viewModel
+        .obtenerComponenteConIngredientes(componenteAEditar?.id ?: 0)
+        .collectAsState(initial = null)
+
+    LaunchedEffect(componenteAEditar) {
+        if (componenteAEditar != null) {
+            tipo = componenteAEditar.tipo
+            nombre = componenteAEditar.nombre
+            grHC = componenteAEditar.grHC_ini.toString()
+            grLip = componenteAEditar.grLip_ini.toString()
+            grPro = componenteAEditar.grPro_ini.toString()
         }
+    }
+
+    // Función para limpiar el formulario
+    fun limpiarFormulario() {
+        nombre = ""
+        tipo = TipoComponente.SIMPLE
+        grHC = ""
+        grLip = ""
+        grPro = ""
+        componentesSeleccionados.clear()
     }
 
     Column(
@@ -145,12 +168,85 @@ fun Formulario(
                 )
             }
             TipoComponente.MENU, TipoComponente.DIETA -> {
-                SelectorComponentes(
-                    componentesSeleccionados = componentesSeleccionados,
-                    tipo = tipo,
-                    viewModel = viewModel,
-                    onMostrarDialogo = { mostrarDialogoComponentes = true }
-                )
+                Column {
+                    // Mostrar componentes existentes
+                    if (componenteAEditar != null) {
+                        Text(
+                            text = "Componentes actuales:",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        componenteConIngredientes?.ingredientes?.forEach { ingrediente ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = ingrediente.nombre,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { 
+                                        viewModel.eliminarIngrediente(ingrediente)
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Eliminar componente"
+                                    )
+                                }
+                            }
+                            Divider()
+                        }
+                    }
+
+                    // Botón para añadir nuevos componentes
+                    Button(
+                        onClick = { mostrarDialogoComponentes = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text("Añadir Componentes")
+                    }
+
+                    // Lista de componentes seleccionados nuevos
+                    if (componentesSeleccionados.isNotEmpty()) {
+                        Text(
+                            text = "Nuevos componentes a añadir:",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        componentesSeleccionados.forEach { componente ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = componente.nombre,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { 
+                                        componentesSeleccionados.remove(componente)
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Eliminar de la selección"
+                                    )
+                                }
+                            }
+                            Divider()
+                        }
+                    }
+                }
             }
         }
 
@@ -168,12 +264,19 @@ fun Formulario(
                 )
 
                 if (componenteAEditar != null) {
-                    viewModel.actualizarAlimento(nuevoComponente)
+                    viewModel.actualizarAlimentoConIngredientes(
+                        nuevoComponente,
+                        componentesSeleccionados.toList()
+                    )
                 } else {
-                    viewModel.agregarAlimento(nuevoComponente)
+                    viewModel.agregarAlimentoConIngredientes(
+                        nuevoComponente,
+                        componentesSeleccionados.toList()
+                    )
                 }
-
+                
                 mostrarMensajeGuardado = true
+                limpiarFormulario()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -188,10 +291,19 @@ fun Formulario(
         mostrarDialogoComponentes = mostrarDialogoComponentes,
         onDismissDialogo = { mostrarDialogoComponentes = false },
         mostrarMensajeGuardado = mostrarMensajeGuardado,
-        onMensajeGuardadoDismiss = { mostrarMensajeGuardado = false },
+        onMensajeGuardadoDismiss = { 
+            mostrarMensajeGuardado = false
+        },
         viewModel = viewModel,
         tipo = tipo,
-        componentesSeleccionados = componentesSeleccionados
+        componentesSeleccionados = componentesSeleccionados,
+        onComponenteSeleccionado = { componente, seleccionado ->
+            if (seleccionado) {
+                componentesSeleccionados.add(componente)
+            } else {
+                componentesSeleccionados.remove(componente)
+            }
+        }
     )
 }
 
@@ -273,7 +385,7 @@ private fun FormularioComponenteDieta(
         if (componenteAEditar?.tipo == TipoComponente.MENU) {
             viewModel.obtenerComponenteConIngredientes(componenteAEditar.id)
                 .collect { componenteConIngredientes ->
-                    ingredientesSeleccionados = componenteConIngredientes.ingredientes
+                    ingredientesSeleccionados = componenteConIngredientes!!.ingredientes
                         .mapNotNull { ingrediente -> 
                             alimentos.find { it.id == ingrediente.componenteDietaId }
                         }
@@ -545,7 +657,8 @@ private fun MostrarDialogos(
     onMensajeGuardadoDismiss: () -> Unit,
     viewModel: AlimentosMVVM,
     tipo: TipoComponente,
-    componentesSeleccionados: List<ComponenteDieta>
+    componentesSeleccionados: List<ComponenteDieta>,
+    onComponenteSeleccionado: (ComponenteDieta, Boolean) -> Unit
 ) {
     if (mostrarDialogoComponentes) {
         val alimentos by viewModel.alimentos.collectAsState(initial = emptyList())
@@ -567,25 +680,29 @@ private fun MostrarDialogos(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    if (componente in componentesSeleccionados) {
-                                        // Implementar la lógica para quitar el componente
-                                    } else {
-                                        // Implementar la lógica para agregar el componente
-                                    }
-                                },
+                                    val estaSeleccionado = componente in componentesSeleccionados
+                                    onComponenteSeleccionado(componente, !estaSeleccionado)
+                                }
+                                .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
                                 checked = componente in componentesSeleccionados,
                                 onCheckedChange = { checked ->
-                                    if (checked) {
-                                        // Implementar la lógica para agregar el componente
-                                    } else {
-                                        // Implementar la lógica para quitar el componente
-                                    }
+                                    onComponenteSeleccionado(componente, checked)
                                 }
                             )
-                            Text(componente.nombre)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = componente.nombre,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "Calorías: ${componente.Kcal_ini}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
                 }
