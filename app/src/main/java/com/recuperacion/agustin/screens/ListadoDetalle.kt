@@ -215,7 +215,7 @@ fun ComponenteItem(
         }
     }
 }
-
+//
 @Composable
 private fun ListaComponentes(ingredientes: List<Ingrediente>) {
     Text(

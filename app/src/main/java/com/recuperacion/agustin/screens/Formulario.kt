@@ -163,7 +163,7 @@ fun Formulario(
                 }
             }
 
-            // Botones de acción al final
+            // Botones de acción
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

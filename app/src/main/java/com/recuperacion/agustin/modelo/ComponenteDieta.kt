@@ -3,7 +3,7 @@ package com.recuperacion.agustin.modelo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.io.Serializable
-
+//
 @Entity(tableName = "componentes")
 data class ComponenteDieta(
     @PrimaryKey(autoGenerate = true)

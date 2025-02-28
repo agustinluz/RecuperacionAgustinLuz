@@ -5,7 +5,7 @@ import com.recuperacion.agustin.modelo.ComponenteConIngredientes
 import com.recuperacion.agustin.modelo.ComponenteDieta
 import com.recuperacion.agustin.modelo.TipoComponente
 import kotlinx.coroutines.flow.Flow
-
+//
 @Dao
 interface ComponenteDietaDao {
     @Query("SELECT * FROM componentes")

@@ -11,6 +11,7 @@ import com.recuperacion.agustin.modelo.Ingrediente
     version = 8,
     exportSchema = false
 )
+//
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun componenteDietaDao(): ComponenteDietaDao

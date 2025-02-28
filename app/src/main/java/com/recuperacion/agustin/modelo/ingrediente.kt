@@ -1,5 +1,5 @@
 package com.recuperacion.agustin.modelo
-
+//
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey

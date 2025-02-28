@@ -1,5 +1,5 @@
 package com.recuperacion.agustin.modelo
-
+//
 enum class TipoComponente {
     SIMPLE,     // Alimentos básicos
     PROCESADO,  // Alimentos procesados

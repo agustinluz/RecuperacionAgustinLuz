@@ -20,3 +20,4 @@ class Converters {
         return TipoComponente.valueOf(value)
     }
 }
+//
