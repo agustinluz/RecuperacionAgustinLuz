@@ -1,46 +1,34 @@
 package com.recuperacion.agustin
 
-import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.navigation.*
+import androidx.lifecycle.ViewModelProvider
 import com.recuperacion.agustin.screens.Formulario
-import com.recuperacion.agustin.modelo.AlimentosMVVM
-import com.recuperacion.agustin.modelo.AlimentosMVVMFactory
-import com.recuperacion.agustin.room.AppDatabase
-import com.recuperacion.agustin.modelo.AlimentosRepository
-import com.recuperacion.agustin.screens.Ruta
-import com.recuperacion.agustin.modelo.IngredienteRepository
 import com.recuperacion.agustin.screens.ListadoDetalle
-import com.recuperacion.agustin.ui.theme.DietasTheme
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Text
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TopAppBarDefaults
+import com.recuperacion.agustin.ui.theme.RecuperacionAgustinLuzTheme
+import com.recuperacion.agustin.viewmodel.AlimentosMVVM
 
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: AlimentosMVVM
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(this, AlimentosMVVM.Factory(application))[AlimentosMVVM::class.java]
+
         setContent {
-            DietasTheme {
-                MainScreen()
+            RecuperacionAgustinLuzTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainContent(viewModel)
+                }
             }
         }
     }
@@ -48,79 +36,36 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
-    val navController = rememberNavController()
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = AppDatabase.getDatabase(context)
-    
-    val alimentosRepository = AlimentosRepository(database.componenteDietaDao())
-    val ingredienteRepository = IngredienteRepository(database.ingredienteDao())
-    
-    val viewModel: AlimentosMVVM = viewModel(
-        factory = AlimentosMVVMFactory(
-            application = application,
-            alimentosRepository = alimentosRepository,
-            ingredienteRepository = ingredienteRepository
-        )
-    )
+private fun MainContent(viewModel: AlimentosMVVM) {
+    // Cambio aquí: ahora inicia en FORMULARIO en vez de LISTADO
+    val currentScreenState = remember { mutableStateOf(Screen.FORMULARIO) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Gestión de Dietas",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
+                title = { Text(text = "Gestión de Alimentos") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                actions = {
-                    IconButton(onClick = { navController.navigate(Ruta.Formulario.ruta) }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Nuevo",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    IconButton(onClick = { navController.navigate(Ruta.ListadoDetalle.ruta) }) {
-                        Icon(
-                            Icons.Default.List,
-                            contentDescription = "Listado",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         }
     ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Ruta.Formulario.ruta,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Ruta.Formulario.ruta) {
-                Formulario(viewModel)
-            }
-            composable(
-                route = "${Ruta.Formulario.ruta}/{componenteId}",
-                arguments = listOf(navArgument("componenteId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val componenteId = backStackEntry.arguments?.getInt("componenteId") ?: return@composable
-                val componente = viewModel.obtenerComponentePorId(componenteId)
-                Formulario(viewModel, componente)
-            }
-            composable(Ruta.ListadoDetalle.ruta) {
-                ListadoDetalle(
-                    viewModel = viewModel,
-                    onNavigateToEdit = { componente ->
-                        navController.navigate("${Ruta.Formulario.ruta}/${componente.id}")
-                    }
-                )
-            }
+        when (currentScreenState.value) {
+            Screen.LISTADO -> ListadoDetalle(
+                viewModel = viewModel,
+                onNavigateToFormulario = { currentScreenState.value = Screen.FORMULARIO },
+                modifier = Modifier.padding(paddingValues)
+            )
+            Screen.FORMULARIO -> Formulario(
+                viewModel = viewModel,
+                onNavigateBack = { currentScreenState.value = Screen.LISTADO }
+            )
         }
     }
+}
+
+enum class Screen {
+    LISTADO,
+    FORMULARIO
 }

@@ -28,7 +28,7 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun DietasTheme(
+fun  RecuperacionAgustinLuzTheme(
     darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
