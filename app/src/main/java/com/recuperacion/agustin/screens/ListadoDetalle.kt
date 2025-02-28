@@ -1,144 +1,64 @@
 package com.recuperacion.agustin.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.recuperacion.agustin.componentes.ComponenteItem
-import com.recuperacion.agustin.modelo.AlimentosMVVM
+
 import com.recuperacion.agustin.modelo.ComponenteDieta
 import com.recuperacion.agustin.modelo.TipoComponente
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import com.recuperacion.agustin.viewmodel.AlimentosMVVM
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta) -> Unit) {
-    var tipoSeleccionado by remember { mutableStateOf<TipoComponente?>(null) }
-    val alimentos by viewModel.alimentos.collectAsState(initial = emptyList())
-    var componenteExpandido by remember { mutableStateOf<ComponenteDieta?>(null) }
+fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToFormulario: () -> Unit, modifier: Modifier) {
+    val alimentos by viewModel.allComponentes.collectAsState(initial = emptyList())
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "Filtrar por tipo:",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FiltroBotón(
-                texto = "Todos",
-                seleccionado = tipoSeleccionado == null,
-                onClick = { tipoSeleccionado = null }
+        alimentos.forEach { componente ->
+            ComponenteItem(
+                componente = componente,
+                onVerDetalles = {  },
+                onEliminar = {  }
             )
-            TipoComponente.values().forEach { tipo ->
-                FiltroBotón(
-                    texto = tipo.name,
-                    seleccionado = tipoSeleccionado == tipo,
-                    onClick = { tipoSeleccionado = tipo }
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
+    }
+}
 
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+@Composable
+fun ComponenteItem(
+    componente: ComponenteDieta,
+    onVerDetalles: () -> Unit,
+    onEliminar: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
         ) {
-            val alimentosFiltrados = if (tipoSeleccionado == null) {
-                alimentos
-            } else {
-                alimentos.filter { it.tipo == tipoSeleccionado }
-            }
-
-            items(alimentosFiltrados) { componente ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { 
-                            componenteExpandido = if (componenteExpandido == componente) null else componente 
-                        }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = componente.nombre,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = "Tipo: ${componente.tipo}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            Row {
-                                IconButton(onClick = { onNavigateToEdit(componente) }) {
-                                    Icon(Icons.Default.Edit, "Editar")
-                                }
-                                IconButton(onClick = { viewModel.eliminarAlimento(componente) }) {
-                                    Icon(Icons.Default.Delete, "Eliminar")
-                                }
-                            }
-                        }
-
-                        // Mostrar detalles cuando está expandido
-                        if (componenteExpandido == componente) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Divider()
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            when (componente.tipo) {
-                                TipoComponente.MENU, TipoComponente.DIETA -> {
-                                    val componenteConIngredientes by viewModel
-                                        .obtenerComponenteConIngredientes(componente.id)
-                                        .collectAsState(initial = null)
-                                    
-                                    Text(
-                                        text = "Componentes:",
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
-                                    componenteConIngredientes?.ingredientes?.forEach { ingrediente ->
-                                        Text(
-                                            text = "• ${ingrediente.nombre} (${ingrediente.cantidad}g)",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                }
-                                else -> {
-                                    Text("Información nutricional:")
-                                    Text("• Carbohidratos: ${componente.grHC_ini}g")
-                                    Text("• Lípidos: ${componente.grLip_ini}g")
-                                    Text("• Proteínas: ${componente.grPro_ini}g")
-                                    Text("• Calorías totales: ${componente.Kcal_ini} kcal")
-                                }
-                            }
-                        }
-                    }
+            Text(text = componente.nombre)
+            Text(text = "Tipo: ${componente.tipo}")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(onClick = onVerDetalles) {
+                    Text("Ver detalles")
+                }
+                Button(onClick = onEliminar) {
+                    Text("Eliminar")
                 }
             }
         }
@@ -146,19 +66,92 @@ fun ListadoDetalle(viewModel: AlimentosMVVM, onNavigateToEdit: (ComponenteDieta)
 }
 
 @Composable
-private fun FiltroBotón(
-    texto: String,
-    seleccionado: Boolean,
-    onClick: () -> Unit
+private fun DetallesComponente(
+    componente: ComponenteDieta,
+    viewModel: AlimentosMVVM
 ) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (seleccionado) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.secondary
-        ),
-        modifier = Modifier.padding(horizontal = 4.dp)
-    ) {
-        Text(texto)
+    when (componente.tipo) {
+        TipoComponente.MENU, TipoComponente.DIETA -> {
+            val componenteConIngredientes by viewModel
+                .getComponenteConIngredientes(componente.id)
+                .collectAsState(initial = null)
+
+            Column {
+                Text(
+                    text = "Componentes:",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                componenteConIngredientes?.ingredientes?.forEach { ingrediente ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "• ${ingrediente.nombre}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "${ingrediente.cantidad}g",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Calorías totales: ${componenteConIngredientes?.calcularKcalTotales()?.toInt() ?: 0} kcal",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+        else -> {
+            InfoNutricional(componente)
+        }
+    }
+}
+
+@Composable
+private fun InfoNutricional(componente: ComponenteDieta) {
+    Column {
+        Text(
+            text = "Información nutricional",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            InfoNutricionalItem("Carbohidratos", componente.grHC_ini)
+            InfoNutricionalItem("Lípidos", componente.grLip_ini)
+            InfoNutricionalItem("Proteínas", componente.grPro_ini)
+        }
+        Text(
+            text = "Calorías totales: ${componente.Kcal_ini} kcal",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(top = 8.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun InfoNutricionalItem(label: String, valor: Double) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = "${valor}g",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
     }
 }

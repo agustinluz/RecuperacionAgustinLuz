@@ -1,89 +1,71 @@
 package com.recuperacion.agustin
 
-import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.navigation.*
+import androidx.lifecycle.ViewModelProvider
 import com.recuperacion.agustin.screens.Formulario
-import com.recuperacion.agustin.componentes.MiTopAppBar
-import com.recuperacion.agustin.modelo.AlimentosMVVM
-import com.recuperacion.agustin.modelo.AlimentosMVVMFactory
-import com.recuperacion.agustin.room.AppDatabase
-import com.recuperacion.agustin.modelo.AlimentosRepository
-import com.recuperacion.agustin.screens.Ruta
-import com.recuperacion.agustin.modelo.IngredienteRepository
 import com.recuperacion.agustin.screens.ListadoDetalle
+import com.recuperacion.agustin.ui.theme.RecuperacionAgustinLuzTheme
+import com.recuperacion.agustin.viewmodel.AlimentosMVVM
 
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: AlimentosMVVM
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(this, AlimentosMVVM.Factory(application))[AlimentosMVVM::class.java]
+
         setContent {
-            MainScreen()
+            RecuperacionAgustinLuzTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainContent(viewModel)
+                }
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
-    val navController = rememberNavController()
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = AppDatabase.getDatabase(context)
-    
-    val alimentosRepository = AlimentosRepository(database.componenteDietaDao())
-    val ingredienteRepository = IngredienteRepository(database.ingredienteDao())
-    
-    val viewModel: AlimentosMVVM = viewModel(
-        factory = AlimentosMVVMFactory(
-            application = application,
-            alimentosRepository = alimentosRepository,
-            ingredienteRepository = ingredienteRepository
-        )
-    )
+private fun MainContent(viewModel: AlimentosMVVM) {
+    // Cambio aquí: ahora inicia en FORMULARIO en vez de LISTADO
+    val currentScreenState = remember { mutableStateOf(Screen.FORMULARIO) }
 
     Scaffold(
         topBar = {
-            MiTopAppBar(
-                onNavigateToFormulario = { navController.navigate(Ruta.Formulario.ruta) },
-                onNavigateToListado = { navController.navigate(Ruta.ListadoDetalle.ruta) }
+            TopAppBar(
+                title = { Text(text = "Gestión de Alimentos") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         }
     ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = Ruta.Formulario.ruta,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(Ruta.Formulario.ruta) {
-                Formulario(viewModel)
-            }
-            composable(
-                route = "${Ruta.Formulario.ruta}/{componenteId}",
-                arguments = listOf(navArgument("componenteId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val componenteId = backStackEntry.arguments?.getInt("componenteId") ?: return@composable
-                val componente = viewModel.obtenerComponentePorId(componenteId)
-                Formulario(viewModel, componente)
-            }
-            composable(Ruta.ListadoDetalle.ruta) {
-                ListadoDetalle(
-                    viewModel = viewModel,
-                    onNavigateToEdit = { componente ->
-                        navController.navigate("${Ruta.Formulario.ruta}/${componente.id}")
-                    }
-                )
-            }
+        when (currentScreenState.value) {
+            Screen.LISTADO -> ListadoDetalle(
+                viewModel = viewModel,
+                onNavigateToFormulario = { currentScreenState.value = Screen.FORMULARIO },
+                modifier = Modifier.padding(paddingValues)
+            )
+            Screen.FORMULARIO -> Formulario(
+                viewModel = viewModel,
+                onNavigateBack = { currentScreenState.value = Screen.LISTADO }
+            )
         }
     }
+}
+
+enum class Screen {
+    LISTADO,
+    FORMULARIO
 }
